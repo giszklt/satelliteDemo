@@ -907,17 +907,17 @@ let utils = {
         }
 
         let sectorPolygon = this.getSector(position.lon, position.lat, (ru * 1000) / 2, minAngle + 30, maxAngle + 30, 1);
-        let sector = viewer.entities.add({
-            id: 'sector',
-            show: viewer.scene.mode != 3,
-            polygon: {
-                hierarchy: new Cesium.CallbackProperty(() => {
-                    return new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(sectorPolygon))
-                }, false),
-                material: color,
-                extrudedHeight: 100,
-            }
-        })
+        // let sector = viewer.entities.add({
+        //     id: 'sector',
+        //     show: viewer.scene.mode != 3,
+        //     polygon: {
+        //         hierarchy: new Cesium.CallbackProperty(() => {
+        //             return new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(sectorPolygon))
+        //         }, false),
+        //         material: color,
+        //         extrudedHeight: 100,
+        //     }
+        // })
 
         // let sector = viewer.scene.primitives.add(new Cesium.Primitive({
         //     geometryInstances: new Cesium.GeometryInstance({
@@ -948,13 +948,13 @@ let utils = {
                     if (ru != tempru) {
                         ru = tempru;
                         viewer.scene.primitives.remove(entity);
-                        viewer.entities.remove(sector);
+                        // viewer.entities.remove(sector);
                         viewer.scene.preRender.removeEventListener(fun);
                         self.moveEntity(viewer, type, satellite, data)
                     }
                 }
                 customSensor.show = scene.mode == 3
-                sector.show = scene.mode != 3;
+                // sector.show = scene.mode != 3;
                 //
                 // viewer.scene.primitives.remove(sector);
                 // sector.destroy()

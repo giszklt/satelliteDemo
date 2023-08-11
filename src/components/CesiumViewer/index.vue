@@ -35,8 +35,8 @@ export default {
           height: 0,
           // lon: -130.01,
           // lat: 35.05,
-          lon: -143.94,
-          lat: 42.45,
+          lon: 113.94,
+          lat: 32.45,
           // lon: -133.756547,
           // lat: 53.4,
           // lon: -117.5,
@@ -48,25 +48,62 @@ export default {
       dic: [
       ],
       satelliteList: [
+        // {
+        //   satelliteCode: "text-1",
+        //   name: "text-1",
+        //   ru: 100,
+        // },
+
         {
-          satelliteCode: "test-1",
-          name: "test-1",
-          ru: 100,
+          satelliteCode: "text-1",
+          name: "text-1",
+          ru: 1000,
+        },
+        {
+          satelliteCode: "text-2",
+          name: "text-2",
+          ru: 1000,
+        },{
+          satelliteCode: "text-3",
+          name: "text-3",
+          ru: 1000,
         }
       ],
       task: [
+        // {
+        //   endTime: "2022-04-09 15:09:00.375",
+        //   satelliteCode: "text-1",
+        //   startTime: "2022-04-09 15:04:50.547",
+        //   stationCode: "QD",
+        //   type: "SC"
+        // },
+        // {
+        //   endTime: "2022-04-09 15:03:00.375",
+        //   satelliteCode: "text-1",
+        //   startTime: "2022-04-09 14:57:43.547",
+        //   stationCode: "SY",
+        //   type: "SC"
+        // },
+
         {
-          endTime: "2022-04-09 15:09:00.375",
+          endTime: "2022-04-11 00:00:00",
           satelliteCode: "text-1",
-          startTime: "2022-04-09 15:04:50.547",
-          stationCode: "QD",
+          startTime: "2022-04-09 00:00:00",
+          stationCode: "text-2",
           type: "SC"
         },
         {
-          endTime: "2022-04-09 15:03:00.375",
-          satelliteCode: "text-1",
-          startTime: "2022-04-09 14:57:43.547",
-          stationCode: "SY",
+          endTime: "2022-04-11 00:00:00",
+          satelliteCode: "text-3",
+          startTime: "2022-04-09 00:00:00",
+          stationCode: "text-1",
+          type: "SC"
+        },
+        {
+          endTime: "2022-04-11 00:00:00",
+          satelliteCode: "text-2",
+          startTime: "2022-04-09 00:00:00",
+          stationCode: "CSS",
           type: "SC"
         }
       ]
@@ -151,26 +188,56 @@ export default {
       // 绘制轨道
       let self = this;
       console.log(new Date())
-      this.initCal().then((source) => {
-        source.entities.values.forEach(item => {
-          if (item.model) {
-            // viewer.entities.add(item)
+      let gdDatas = [...this.gdData];
+      for (let i = 1; i <=2; i++) {
+        let ephs = [...this.gdData[0].ephList];
+        const {...tempItem} = this.gdData[0];
+        ephs.forEach((eph, ephi) => {
+          if ((ephi + 1) % 4 === 0){
+            ephs[ephi] = eph - 2000000 * i;
+          } else {
+            if ((ephi + 1) % 2 === 0){
+              ephs[ephi] = eph - 4 * i;
+            }
           }
         })
-        console.log(new Date())
-        // 添加站
-        this.addStation(this.stationList);
-        //添加条带
-        this.addStrips();
-        let timer = setInterval(() => {
+        tempItem.ephList = ephs;
+        tempItem.satelliteCode = tempItem.satelliteCode.replace('1', String(i + 1));
+        gdDatas.push(tempItem);
+      }
+      this.initCal(gdDatas).then((source) => {
+        console.log("source:", source);
+        setTimeout(() => {
           self.addload();
-          clearInterval(timer);
-        }, 1000);
-        // this.addload();
-      })
+        }, 1000)
+      });
+
+
+      // this.initCal().then((source) => {
+      //   source.entities.values.forEach(item => {
+      //     if (item.model) {
+      //       // viewer.entities.add(item)
+      //     }
+      //   })
+      //   console.log(new Date())
+      //   // 添加站
+      //   this.addStation(this.stationList);
+      //   //添加条带
+      //   this.addStrips();
+      //   let timer = setInterval(() => {
+      //     self.addload();
+      //     clearInterval(timer);
+      //   }, 1000);
+      //   // this.addload();
+      // })
+
+      // this.addload();
+      this.addStation(this.stationList);
+
+
     },
     // 添加轨道
-    initCal() {
+    initCal(gd) {
       let timeLength = this.times.getCurrentDay();
       let startTime =
           timeLength[0].split(" ")[0] + "T" + timeLength[0].split(" ")[1] + "Z";
@@ -180,7 +247,8 @@ export default {
       endTime = "2022-04-09T23:00:00Z";
       let modelUrl = "models/wx.gltf";
       return this.utils.czmlgo(
-          this.gdData,
+          // this.gdData,
+          gd,
           startTime,
           endTime,
           window.viewer,
@@ -227,9 +295,11 @@ export default {
     },
     // 添加载荷
     addload() {
+      // debugger
       this.satelliteList.forEach(item => {
         let entity = this.utils.getObjById(item.satelliteCode, window.viewer);
         if (entity) {
+          this.utils.moveEntity(window.viewer, 1, entity, item);
           if (item.satelliteCode.indexOf("8A")) {
             // this.utils.drawShadow(viewer, entity, "xxx", true,0)
             // this.utils.drawCone(viewer, entity, "xxx", true)
@@ -239,16 +309,12 @@ export default {
           }
         }
       });
-      // setTimeout(function (){
-      //
-      //   self.timerRun();
-      // }, 5000)
-      // this.timerRun();
+      this.timerRun();
     },
     // 任务执行监听
     timerRun() {
-      let satelliteCode = "text-1";
-      let wxEntity = this.utils.getObjById(satelliteCode, window.viewer);
+      // let satelliteCode = "text-1";
+      // let wxEntity = this.utils.getObjById(satelliteCode, window.viewer);
       this.task.forEach(item => {
         let scTimes = [];
         if (item.type == "SC") {
@@ -262,10 +328,13 @@ export default {
             stop: scEnd
           });
           let stationEntity = this.utils.getObjById(sId, window.viewer);
+          let wxId = item.satelliteCode;
+          let wxEntity = this.utils.getObjById(wxId, window.viewer);
+          // debugger
           if (stationEntity) {
             this.utils.lineEntity(
                 window.viewer,
-                satelliteCode + "" + sId,
+                wxId + "" + sId,
                 wxEntity,
                 stationEntity,
                 true,
@@ -276,6 +345,8 @@ export default {
           }
         }
       });
+
+      return
 
       let stationEntity = this.utils.getObjById("ZJ", window.viewer);
 
@@ -340,6 +411,7 @@ export default {
             // lineItem.colorType
         );
       }
+
     }
   }
 };
