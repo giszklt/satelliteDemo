@@ -868,6 +868,62 @@ let utils = {
         entity.eType = "sensor";
         return entity
     },
+    moveRectangleEntity1(viewer, id, long, width, satellite, roll, pitch, datas) { // 场景，卫星实体,视场角
+
+
+
+
+        let rectangularPyramidSensor = new CesiumSensors.RectangularPyramidSensorVolume();
+        rectangularPyramidSensor.id = id;
+        let currentTime = viewer.clock.currentTime;
+        let position = this.getEntityPos(satellite, currentTime);
+        let self = this;
+        rectangularPyramidSensor.radius = position.alt * 2.5;
+        rectangularPyramidSensor.xHalfAngle = Math.atan((long / position.alt) * 2.5); //长
+        rectangularPyramidSensor.yHalfAngle = Math.atan((width / position.alt) * 2.5); //宽
+        rectangularPyramidSensor.intersectionColor = new Cesium.Color(0.0, 1.0, 1.0, 1);
+        rectangularPyramidSensor.intersectionWidth = 2.5;
+        rectangularPyramidSensor.lateralSurfaceMaterial = Cesium.Material.fromType('Color');
+        rectangularPyramidSensor.lateralSurfaceMaterial.uniforms.color = new Cesium.Color(0.0, 1.0, 1.0, 0.5);
+        let fun = (scene, time) => {
+            if (satellite.computeModelMatrix(time)) {
+                let show = true;
+                let pitchAngle = 180;
+                let rollAngle = 0;
+                datas.some(data => {
+                    show = self.checkShowByTime(time, data.startTime, data.endTime)
+                    console.log(show)
+                    pitchAngle = pitchAngle + (show ? data.pitchAngle : 0);
+                    rollAngle = show ? data.rollAngle : 0;
+                    return show;
+                })
+                rectangularPyramidSensor.show = show;
+                let modelMatrix = satellite.computeModelMatrix(time);
+                pitchAngle = 206;
+                rollAngle = 26;
+                //1是前后摆，按Y轴。0是左右，按X轴
+                if (roll) {
+                    Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationX(Cesium.Math.toRadians(rollAngle))), modelMatrix)
+                }
+                if (pitch) {
+                    Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(pitchAngle))), modelMatrix)
+                }
+
+                rectangularPyramidSensor.modelMatrix = modelMatrix;
+                let posData = this.setPos(viewer, satellite, 1);
+                if (posData) {
+                    satellite.orientation = posData.sys;
+                }
+            }
+        }
+        viewer.scene.preRender.addEventListener(fun);
+        rectangularPyramidSensor.removeEventListener = () => {
+            viewer.scene.preRender.removeEventListener(fun)
+        }
+        let entity = viewer.scene.primitives.add(rectangularPyramidSensor);
+        entity.eType = "sensor";
+        return entity
+    },
     //绘制投影
     moveEntity(viewer, type, satellite, data) { // 场景，卫星实体,视场角
         //圆锥clockNow===2;
@@ -881,7 +937,7 @@ let utils = {
         if (type == 2) {
             alt = position.alt * 10 + position.alt * 10;
         }
-
+        console.log(CesiumSensors)
         let customSensor = new CesiumSensors.CustomSensorVolume();
         // debugger
         let directions = [];
@@ -1013,6 +1069,7 @@ let utils = {
         entity.lateralSurfaceMaterial.uniforms.color = color;
         return entity
     },
+    addRader(){},
     //entities方式添加点、label
     drawPoints(viewer, points) {
         if (Array.isArray(points)) {

@@ -45,8 +45,7 @@ export default {
           max: 150
         },
       ],
-      dic: [
-      ],
+      dic: [],
       satelliteList: [
         // {
         //   satelliteCode: "text-1",
@@ -63,7 +62,7 @@ export default {
           satelliteCode: "text-2",
           name: "text-2",
           ru: 1000,
-        },{
+        }, {
           satelliteCode: "text-3",
           name: "text-3",
           ru: 1000,
@@ -189,14 +188,14 @@ export default {
       let self = this;
       console.log(new Date())
       let gdDatas = [...this.gdData];
-      for (let i = 1; i <=2; i++) {
+      for (let i = 1; i <= 2; i++) {
         let ephs = [...this.gdData[0].ephList];
         const {...tempItem} = this.gdData[0];
         ephs.forEach((eph, ephi) => {
-          if ((ephi + 1) % 4 === 0){
+          if ((ephi + 1) % 4 === 0) {
             ephs[ephi] = eph - 2000000 * i;
           } else {
-            if ((ephi + 1) % 2 === 0){
+            if ((ephi + 1) % 2 === 0) {
               ephs[ephi] = eph - 4 * i;
             }
           }
@@ -295,8 +294,10 @@ export default {
     },
     // 添加载荷
     addload() {
+
       // debugger
       this.satelliteList.forEach(item => {
+        // return
         let entity = this.utils.getObjById(item.satelliteCode, window.viewer);
         if (entity) {
           this.utils.moveEntity(window.viewer, 1, entity, item);
@@ -309,6 +310,60 @@ export default {
           }
         }
       });
+      let i = Cesium.Cartesian3.fromDegrees(112.39, 39.9);
+      let t = Cesium.Cartesian3.fromDegrees(112.39, 39.9, 4e5);
+      let r = Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(i), new Cesium.Cartesian3(0, 0, 2e5), new Cesium.Matrix4);
+
+      viewer.scene.primitives.add(new Cesium.BillboardCollection).add({
+        image: "./img/satellite.png",
+        position: t,
+        horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset: new Cesium.Cartesian2(-10, 10),
+        scale: .3
+      });
+
+      let n = new Cesium.CylinderGeometry({
+        length: 4e5,
+        topRadius: 0,
+        bottomRadius: 12e4,
+        vertexFormat: Cesium.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat
+      });
+      let s = new Cesium.GeometryInstance({geometry: n, modelMatrix: r});
+      let o = viewer.scene.primitives.add(new Cesium.Primitive({
+        geometryInstances: [s],
+        appearance: new Cesium.MaterialAppearance({
+          material: new Cesium.Material({
+            fabric: {
+              type: "VtxfShader1",
+              uniforms: {
+                color: new Cesium.Color(.2, 1, 0, 1),
+                repeat: 30,
+                offset: 0,
+                thickness: .3
+              },
+              source: " uniform vec4 color;" +
+                  " uniform float repeat;" +
+                  " uniform float offset;" +
+                  " uniform float thickness;" +
+                  " czm_material czm_getMaterial(czm_materialInput materialInput)" +
+                  " {" +
+                  " czm_material material = czm_getDefaultMaterial(materialInput);" +
+                  " float sp = 1.0/repeat;" +
+                  " vec2 st = materialInput.st;" +
+                  // " vec4 colorImage = texture2D(image, vec2(fract(st.s - time), st.t));" +
+                  " float dis = distance(st, vec2(0.5));" +
+                  " float m = mod(dis + offset, sp);" +
+                  " float a = step(sp*(1.0-thickness), m);" +
+                  " material.diffuse = color.rgb;" +
+                  // " material.alpha = colorImage.a * color.a;" +
+                  " material.alpha = a * color.a;" +
+                  " return material;" +
+                  " } "
+            }, translucent: !1
+          }), faceForward: !1, closed: !0
+        })
+      }));
       this.timerRun();
     },
     // 任务执行监听
