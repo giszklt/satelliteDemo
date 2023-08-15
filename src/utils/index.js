@@ -869,10 +869,6 @@ let utils = {
         return entity
     },
     moveRectangleEntity1(viewer, id, long, width, satellite, roll, pitch, datas) { // 场景，卫星实体,视场角
-
-
-
-
         let rectangularPyramidSensor = new CesiumSensors.RectangularPyramidSensorVolume();
         rectangularPyramidSensor.id = id;
         let currentTime = viewer.clock.currentTime;
@@ -937,7 +933,6 @@ let utils = {
         if (type == 2) {
             alt = position.alt * 10 + position.alt * 10;
         }
-        console.log(CesiumSensors)
         let customSensor = new CesiumSensors.CustomSensorVolume();
         // debugger
         let directions = [];
@@ -1069,7 +1064,92 @@ let utils = {
         entity.lateralSurfaceMaterial.uniforms.color = color;
         return entity
     },
-    addRader(){},
+    //添加雷达干扰
+    addRadarInteraction(viewer, type, satellite, data) { // 场景，卫星实体,视场角
+        //圆锥clockNow===2;
+        let entity = null;
+        let currentTime = viewer.clock.currentTime;
+        let position = this.getEntityPos(satellite, currentTime);
+        let alt = position.alt * 2.5;
+        let self = this;
+
+        let i = Cesium.Cartesian3.fromDegrees(position.lon, position.lat);
+        let r = Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(i), new Cesium.Cartesian3(0, 0, 2e5), new Cesium.Matrix4);
+
+        let n = new Cesium.CylinderGeometry({
+            length: 10000000,
+            topRadius: 1000000,
+            bottomRadius: 0,
+            vertexFormat: Cesium.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat
+        });
+        let s = new Cesium.GeometryInstance({geometry: n, modelMatrix: r});
+        let radarInteraction = new Cesium.Primitive({
+            geometryInstances: [s],
+            appearance: new Cesium.MaterialAppearance({
+                material: new Cesium.Material({
+                    fabric: {
+                        type: "VtxfShader1",
+                        uniforms: {
+                            color: new Cesium.Color(1, 0, 0, 1),
+                            repeat: 30,
+                            offset: 0,
+                            thickness: .3
+                        },
+                        source: " uniform vec4 color;" +
+                            " uniform float repeat;" +
+                            " uniform float offset;" +
+                            " uniform float thickness;" +
+                            " czm_material czm_getMaterial(czm_materialInput materialInput)" +
+                            " {" +
+                            " czm_material material = czm_getDefaultMaterial(materialInput);" +
+                            " float sp = 1.0/repeat;" +
+                            " vec2 st = materialInput.st;" +
+                            // " vec4 colorImage = texture2D(image, vec2(fract(st.s - time), st.t));" +
+                            " float dis = distance(st, vec2(0.5));" +
+                            " float m = mod(dis + offset, sp);" +
+                            " float a = step(sp*(1.0-thickness), m);" +
+                            " material.diffuse = color.rgb;" +
+                            // " material.alpha = colorImage.a * color.a;" +
+                            " material.alpha = a * color.a;" +
+                            " return material;" +
+                            " } "
+                    }, translucent: !1
+                }), faceForward: !1, closed: !0
+            })
+        })
+
+        let fun = (scene, time) => {
+            let offset = radarInteraction.appearance.material.uniforms.offset;
+            offset -= 0.001;
+            if (offset > 1.0) {
+                offset = 0.0;
+            }
+            radarInteraction.appearance.material.uniforms.offset = offset;
+            if (satellite.computeModelMatrix(time)) {
+                let modelMatrix = satellite.computeModelMatrix(time);
+                if (typeof (modelMatrix) == 'object') {
+                    Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(90))), modelMatrix)
+                    //如果条带在卫星前进轨道右边，测摆取负数，在左则反之
+                    //俯仰默认旋转180
+                    // Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationX(Cesium.Math.toRadians((rp[0])))), modelMatrix)
+                    // Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(-180 - rp[1]))), modelMatrix)
+
+                    radarInteraction.modelMatrix = modelMatrix
+                }
+            }
+        }
+        viewer.scene.preRender.addEventListener(fun)
+        radarInteraction.removeEventListener = () => {
+            viewer.scene.preRender.removeEventListener(fun)
+        }
+        radarInteraction.id = data.id;
+        radarInteraction.radius = alt;
+
+        // customSensor.show = viewer.scene.mode == 3
+        // customSensor.showThroughEllipsoid = true
+        entity = viewer.scene.primitives.add(radarInteraction);
+        return entity
+    },
     //entities方式添加点、label
     drawPoints(viewer, points) {
         if (Array.isArray(points)) {
