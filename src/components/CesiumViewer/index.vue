@@ -33,57 +33,22 @@ export default {
           name: "测试站",
           url: "models/dish.glb",
           height: 0,
-          // lon: -130.01,
-          // lat: 35.05,
           lon: 113.94,
           lat: 32.45,
-          // lon: -133.756547,
-          // lat: 53.4,
-          // lon: -117.5,
-          // lat: 46.48,
           min: 50,
           max: 150
         },
       ],
       dic: [],
       satelliteList: [
-        // {
-        //   satelliteCode: "text-1",
-        //   name: "text-1",
-        //   ru: 100,
-        // },
-
         {
           satelliteCode: "text-1",
           name: "text-1",
           ru: 1000,
         },
-        // {
-        //   satelliteCode: "text-2",
-        //   name: "text-2",
-        //   ru: 1000,
-        // }, {
-        //   satelliteCode: "text-3",
-        //   name: "text-3",
-        //   ru: 1000,
-        // }
+
       ],
       task: [
-        // {
-        //   endTime: "2022-04-09 15:09:00.375",
-        //   satelliteCode: "text-1",
-        //   startTime: "2022-04-09 15:04:50.547",
-        //   stationCode: "QD",
-        //   type: "SC"
-        // },
-        // {
-        //   endTime: "2022-04-09 15:03:00.375",
-        //   satelliteCode: "text-1",
-        //   startTime: "2022-04-09 14:57:43.547",
-        //   stationCode: "SY",
-        //   type: "SC"
-        // },
-
         {
           endTime: "2022-04-11 00:00:00",
           satelliteCode: "text-1",
@@ -210,27 +175,6 @@ export default {
           self.addload();
         }, 1000)
       });
-
-
-      // this.initCal().then((source) => {
-      //   source.entities.values.forEach(item => {
-      //     if (item.model) {
-      //       // viewer.entities.add(item)
-      //     }
-      //   })
-      //   console.log(new Date())
-      //   // 添加站
-      //   this.addStation(this.stationList);
-      //   //添加条带
-      //   this.addStrips();
-      //   let timer = setInterval(() => {
-      //     self.addload();
-      //     clearInterval(timer);
-      //   }, 1000);
-      //   // this.addload();
-      // })
-
-      // this.addload();
       this.addStation(this.stationList);
 
 

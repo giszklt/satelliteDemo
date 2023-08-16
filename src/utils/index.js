@@ -3,8 +3,8 @@ let utils = {
     // cesium 当前时间
     currentSystemTime: '',
     distanceCal(point1, point2) {
-        let cartographic1 = Cesium.Cartographic.fromDegrees(point1.lon,point1.lat,point1.height);
-        let cartographic2 = Cesium.Cartographic.fromDegrees(point2.lon,point2.lat,point2.height);
+        let cartographic1 = Cesium.Cartographic.fromDegrees(point1.lon, point1.lat, point1.height);
+        let cartographic2 = Cesium.Cartographic.fromDegrees(point2.lon, point2.lat, point2.height);
         let geodesic = new Cesium.EllipsoidGeodesic();
         geodesic.setEndPoints(cartographic1, cartographic2);
         return geodesic.surfaceDistance;
@@ -18,8 +18,8 @@ let utils = {
         return Math.atan(l1 / (h + radii - l2)) * 180 / Math.PI;
     },
     getRollAndPitch(point1, point2) {
-        const pP = {lon:point2.lon, lat:point1.lat, height:point1.alt};
-        const rP = {lon:point1.lon, lat:point2.lat, height:point1.alt};
+        const pP = {lon: point2.lon, lat: point1.lat, height: point1.alt};
+        const rP = {lon: point1.lon, lat: point2.lat, height: point1.alt};
         const pA = this.getAngle(pP, point2);
         const rA = this.getAngle(rP, point2);
         return [pA, rA]
@@ -1030,7 +1030,7 @@ let utils = {
                 // let csspositon = self.getEntityPos(css, time);
                 // let rp = self.getRollAndPitch(csspositon, tepPosition)
                 if (typeof (modelMatrix) == 'object') {
-                     Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(-180))), modelMatrix)
+                    Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(-180))), modelMatrix)
                     //如果条带在卫星前进轨道右边，测摆取负数，在左则反之
                     //俯仰默认旋转180
                     // Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationX(Cesium.Math.toRadians((rp[0])))), modelMatrix)
@@ -1074,12 +1074,18 @@ let utils = {
         let self = this;
 
         let i = Cesium.Cartesian3.fromDegrees(position.lon, position.lat);
-        let r = Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(i), new Cesium.Cartesian3(0, 0, 2e5), new Cesium.Matrix4);
+        let r = Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(i), new Cesium.Cartesian3(0, 0, position.alt / 2), new Cesium.Matrix4);
+
+        //
+        // var modelMatrix111 = Cesium.Matrix4.multiplyByTranslation(
+        //     Cesium.Transforms.eastNorthUpToFixedFrame(positionOnEllipsoid),
+        //     new Cesium.Cartesian3(0.0, 0.0, position.alt * 0.5), new Cesium.Matrix4()
+        // );
 
         let n = new Cesium.CylinderGeometry({
-            length: 10000000,
-            topRadius: 1000000,
-            bottomRadius: 0,
+            length: position.alt,
+            topRadius: 0,
+            bottomRadius: 1000000,
             vertexFormat: Cesium.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat
         });
         let s = new Cesium.GeometryInstance({geometry: n, modelMatrix: r});
@@ -1117,7 +1123,6 @@ let utils = {
                 }), faceForward: !1, closed: !0
             })
         })
-
         let fun = (scene, time) => {
             let offset = radarInteraction.appearance.material.uniforms.offset;
             offset -= 0.001;
@@ -1128,13 +1133,30 @@ let utils = {
             if (satellite.computeModelMatrix(time)) {
                 let modelMatrix = satellite.computeModelMatrix(time);
                 if (typeof (modelMatrix) == 'object') {
-                    Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(90))), modelMatrix)
+                    // Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(0))), modelMatrix)
                     //如果条带在卫星前进轨道右边，测摆取负数，在左则反之
                     //俯仰默认旋转180
                     // Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationX(Cesium.Math.toRadians((rp[0])))), modelMatrix)
                     // Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(-180 - rp[1]))), modelMatrix)
 
-                    radarInteraction.modelMatrix = modelMatrix
+
+                    let tempPosition = self.getEntityPos(satellite, time);
+                    let tempM = Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(
+                            Cesium.Cartesian3.fromDegrees(tempPosition.lon, tempPosition.lat)),
+                        new Cesium.Cartesian3(0, 0, 100000000), new Cesium.Matrix4)
+
+
+                    // if (radarInteraction.geometryInstances)
+                    let tn = new Cesium.CylinderGeometry({
+                        length: position.alt,
+                        topRadius: 0,
+                        bottomRadius: 1000000,
+                        vertexFormat: Cesium.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat
+                    });
+                    radarInteraction.geometryInstances = [new Cesium.GeometryInstance({geometry: tn, modelMatrix: modelMatrix})]
+                    // console.log(tempRadarInteraction.modelMatrix)
+                    // new Cesium.GeometryInstance({geometry: n, modelMatrix: r});
+                    // radarInteraction.modelMatrix = modelMatrix
                 }
             }
         }
