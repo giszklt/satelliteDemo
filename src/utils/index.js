@@ -1,3 +1,10 @@
+import {
+    eastNorthUpToFixedFrame, HeadingPitchRoll,
+    northEastDownToFixedFrame,
+    northUpEastToFixedFrame,
+    northWestUpToFixedFrame
+} from "cesium";
+
 let utils = {
     earthRotate: null,
     // cesium 当前时间
@@ -120,6 +127,15 @@ let utils = {
     },
     // 根据实体id获取实体对象
     getObjById: function (id, viewer) {
+        let es = viewer.dataSources.get(0).entities;
+        let e = null;
+        es.values.some(item => {
+            if (item.id == id) {
+                e = item;
+                return true
+            }
+        })
+        return e;
         try {
             let primitives = viewer.scene.primitives || [];
             for (let i = 0; i < primitives.length; i++) {
@@ -1070,12 +1086,10 @@ let utils = {
         let entity = null;
         let currentTime = viewer.clock.currentTime;
         let position = this.getEntityPos(satellite, currentTime);
-        let alt = position.alt * 2.5;
         let self = this;
 
         let i = Cesium.Cartesian3.fromDegrees(position.lon, position.lat);
         let r = Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(i), new Cesium.Cartesian3(0, 0, position.alt / 2), new Cesium.Matrix4);
-
         //
         // var modelMatrix111 = Cesium.Matrix4.multiplyByTranslation(
         //     Cesium.Transforms.eastNorthUpToFixedFrame(positionOnEllipsoid),
@@ -1130,6 +1144,15 @@ let utils = {
                 offset = 0.0;
             }
             radarInteraction.appearance.material.uniforms.offset = offset;
+            let tempPosition = self.getEntityPos(satellite, time);
+            radarInteraction.modelMatrix = Cesium.Matrix4.multiplyByTranslation(
+                Cesium.Transforms.eastNorthUpToFixedFrame(satellite.position.getValue(time)),
+                new Cesium.Cartesian3(0.0, 0.0, 100), new Cesium.Matrix4()
+            );
+
+
+
+            return
             if (satellite.computeModelMatrix(time)) {
                 let modelMatrix = satellite.computeModelMatrix(time);
                 if (typeof (modelMatrix) == 'object') {
@@ -1139,40 +1162,129 @@ let utils = {
                     // Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationX(Cesium.Math.toRadians((rp[0])))), modelMatrix)
                     // Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(-180 - rp[1]))), modelMatrix)
 
+                    // Cesium.HeadingPitchRoll.fromQuaternion(y, p)
 
                     let tempPosition = self.getEntityPos(satellite, time);
-                    let tempM = Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(
-                            Cesium.Cartesian3.fromDegrees(tempPosition.lon, tempPosition.lat)),
-                        new Cesium.Cartesian3(0, 0, 100000000), new Cesium.Matrix4)
+                    // Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromQuaternion(y, p), S, b.modelMatrix)
+                    // let tempPosition = self.getEntityPos(satellite, time);
+//                     let tti = Cesium.Cartesian3.fromDegrees(tempPosition.lon, tempPosition.lat);
+//                     let ttr = Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(tti), new Cesium.Cartesian3(0, 0, tempPosition.alt / 2), new Cesium.Matrix4);
+//
+//
+//                     let ttn = new Cesium.CylinderGeometry({
+//                         length: tempPosition.alt,
+//                         topRadius: 0,
+//                         bottomRadius: 1000000,
+//                         vertexFormat: Cesium.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat
+//                     });
+//                     let tts = new Cesium.GeometryInstance({geometry: ttn, modelMatrix: ttr});
+//                     let tradarInteraction = new Cesium.Primitive({
+//                         geometryInstances: [tts],
+//                         appearance: new Cesium.MaterialAppearance({
+//                             material: new Cesium.Material({
+//                                 fabric: {
+//                                     type: "VtxfShader1",
+//                                     uniforms: {
+//                                         color: new Cesium.Color(1, 0, 0, 1),
+//                                         repeat: 30,
+//                                         offset: 0,
+//                                         thickness: .3
+//                                     },
+//                                     source: " uniform vec4 color;" +
+//                                         " uniform float repeat;" +
+//                                         " uniform float offset;" +
+//                                         " uniform float thickness;" +
+//                                         " czm_material czm_getMaterial(czm_materialInput materialInput)" +
+//                                         " {" +
+//                                         " czm_material material = czm_getDefaultMaterial(materialInput);" +
+//                                         " float sp = 1.0/repeat;" +
+//                                         " vec2 st = materialInput.st;" +
+//                                         // " vec4 colorImage = texture2D(image, vec2(fract(st.s - time), st.t));" +
+//                                         " float dis = distance(st, vec2(0.5));" +
+//                                         " float m = mod(dis + offset, sp);" +
+//                                         " float a = step(sp*(1.0-thickness), m);" +
+//                                         " material.diffuse = color.rgb;" +
+//                                         // " material.alpha = colorImage.a * color.a;" +
+//                                         " material.alpha = a * color.a;" +
+//                                         " return material;" +
+//                                         " } "
+//                                 }, translucent: !1
+//                             }), faceForward: !1, closed: !0
+//                         })
+//                     })
+//                     console.log(tradarInteraction.modelMatrix, ttr)
+//                     console.log(Cesium.Matrix4.getRotation(ttr), ttr)
+//                     // radarInteraction.modelMatrix = tradarInteraction.modelMatrix;
+//                     // console.log(Cesium.Matrix4.setRotation(radarInteraction.modelMatrix, ttr))
+//                     // return
+//                     radarInteraction.modelMatrix = Cesium.Matrix4.setRotation(radarInteraction.modelMatrix, Cesium.Matrix4.getRotation(ttr));
+// return
+                    const origin = Cesium.Cartesian3.fromDegrees(tempPosition.lon, tempPosition.lat, 0);
+                    console.log(satellite.position.getValue(time))
+                    console.log(Cesium.Cartesian3.fromDegrees(tempPosition.lon, tempPosition.lat))
+                    radarInteraction.modelMatrix = Cesium.Matrix4.multiplyByTranslation(
+                        Cesium.Transforms.eastNorthUpToFixedFrame(satellite.position.getValue(time)),
+                        new Cesium.Cartesian3(0.0, 0.0, tempPosition.alt * 0.5), new Cesium.Matrix4()
+                    );
+                    return;
+                    radarInteraction.modelMatrix = Cesium.Matrix4.multiplyByTranslation(
+                        Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(tempPosition.lon, tempPosition.lat)),
+                        new Cesium.Cartesian3(0.0, 0.0, tempPosition.alt * 0.5), new Cesium.Matrix4()
+                    );
 
+                    return
 
-                    // if (radarInteraction.geometryInstances)
-                    let tn = new Cesium.CylinderGeometry({
-                        length: position.alt,
-                        topRadius: 0,
-                        bottomRadius: 1000000,
-                        vertexFormat: Cesium.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat
-                    });
-                    radarInteraction.geometryInstances = [new Cesium.GeometryInstance({geometry: tn, modelMatrix: modelMatrix})]
+                    //上下平移
+                    let translation = new Cesium.Cartesian3(0, -Cesium.Ellipsoid.WGS84.maximumRadius - tempPosition.alt, 0);
+                    let m4 = Cesium.Matrix4.fromTranslation(translation);
+                    // let tempM = Cesium.Transforms.northUpEastToFixedFrame(origin);
+                    // let tempM = Cesium.Transforms.northWestUpToFixedFrame(origin);
+                    // let tempM = Cesium.Transforms.northEastDownToFixedFrame(origin);
+                    var center = Cesium.Cartesian3.fromDegrees(lon, lat)
+                    var hpr = new Cesium.HeadingPitchRoll(h1 + h2, p1 + p2, r1 + r2)
+                    var q1 = Cesium.Transforms.headingPitchRollQuaternion(center, hpr)
+                    let tempM = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+                    tempM = Cesium.Matrix4.fromTranslationQuaternionRotationScale(origin, rotation,)
+                    // let tempM = modelMatrix;
+                    // tempM = modelMatrix
+                    // Cesium.Matrix4.multiply(tempM, ccccc, tempM);
+                    Cesium.Matrix4.multiply(tempM, m4, tempM);
+                    Cesium.Matrix4.multiply(modelMatrix, tempM, modelMatrix);
+                    // Cesium.Matrix4.multiply(modelMatrix, m4, modelMatrix);
+                    // Cesium.Matrix4.multiply(tempM, tempM, tempM);
+                    // Cesium.Matrix4.multiply(tempM, tempM, tempM);
+                    // let tempM = Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(origin), new Cesium.Cartesian3(0, 0, Cesium.Ellipsoid.WGS84.maximumRadius), new Cesium.Matrix4)
+                    // let tempM = Cesium.Transforms.headingPitchRollToFixedFrame(origin, new Cesium.HeadingPitchRoll(0,  -Math.PI / 2, 0))
+
+                    // Cesium.Matrix4.multiply(tempM, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(90))), tempM)
+                    //  Cesium.Matrix4.multiply(tempM, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationZ(Cesium.Math.toRadians(90))), tempM)
+                    //  Cesium.Matrix4.multiply(tempM, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationX(Cesium.Math.toRadians(90))), tempM)
+                    radarInteraction.modelMatrix = modelMatrix;
+                    // radarInteraction.modelMatrix = tempM
+                    // console.log(radarInteraction)
+                    // // return
+                    // if (radarInteraction.geometryInstances){
+                    //     console.log(radarInteraction.geometryInstances)
+                    //     radarInteraction.geometryInstances[0].modelMatrix = modelMatrix
+                    // }
                     // console.log(tempRadarInteraction.modelMatrix)
                     // new Cesium.GeometryInstance({geometry: n, modelMatrix: r});
                     // radarInteraction.modelMatrix = modelMatrix
                 }
             }
         }
-        viewer.scene.preRender.addEventListener(fun)
+        viewer.scene.preUpdate.addEventListener(fun)
         radarInteraction.removeEventListener = () => {
-            viewer.scene.preRender.removeEventListener(fun)
+            viewer.scene.preUpdate.removeEventListener(fun)
         }
         radarInteraction.id = data.id;
-        radarInteraction.radius = alt;
 
         // customSensor.show = viewer.scene.mode == 3
         // customSensor.showThroughEllipsoid = true
         entity = viewer.scene.primitives.add(radarInteraction);
         return entity
     },
-    //entities方式添加点、label
+    //entities方式添加点、labels
     drawPoints(viewer, points) {
         if (Array.isArray(points)) {
             points.forEach(point => {

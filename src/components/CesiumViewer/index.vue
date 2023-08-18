@@ -42,11 +42,21 @@ export default {
       dic: [],
       satelliteList: [
         {
-          satelliteCode: "text-1",
-          name: "text-1",
+          satelliteCode: "bd",
+          name: "bd",
           ru: 1000,
         },
 
+        {
+          satelliteCode: "bd4",
+          name: "bd4",
+          ru: 1000,
+        },
+        {
+          satelliteCode: "bdG1",
+          name: "bdG1",
+          ru: 1000,
+        },
       ],
       task: [
         {
@@ -170,7 +180,6 @@ export default {
         gdDatas.push(tempItem);
       }
       this.initCal(gdDatas).then((source) => {
-        console.log("source:", source);
         setTimeout(() => {
           self.addload();
         }, 1000)
@@ -189,6 +198,12 @@ export default {
       startTime = "2022-04-09T00:00:00Z";
       endTime = "2022-04-09T23:00:00Z";
       let modelUrl = "models/wx.gltf";
+
+
+      ///
+      return viewer.dataSources.add(
+          Cesium.CzmlDataSource.load("../js/geo.czml")
+      );
       return this.utils.czmlgo(
           // this.gdData,
           gd,
@@ -255,7 +270,7 @@ export default {
           }
         }
       });
-      this.timerRun();
+      // this.timerRun();
     },
     // 任务执行监听
     timerRun() {
