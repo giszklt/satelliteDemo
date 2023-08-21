@@ -1,57 +1,51 @@
-/*
- * @Description: 
- * @Version: 1.0.0
- * @Autor: lqc
- * @Date: 2019-12-06 14:39:58
- * @LastEditors: lqc
- * @LastEditTime: 2020-06-01 14:03:33
- * @FilePath: \cesiumVueClean\vue.config.js
- */
+const {defineConfig} = require('@vue/cli-service')
 const webpack = require('webpack')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
-const env= process.env.NODE_ENV
-module.exports = {
-	publicPath:env === 'production' ? '././': "./",
-	devServer:{
-		port:9099,
-		// baseUrl:'././',
-	},
-	configureWebpack: {
-		plugins: [
-			new CopyWebpackPlugin([
-				{
-					from: 'node_modules/cesium/Build/Cesium/Workers',
-					to: 'cesium/Workers'
-				}
-			]),
-			new CopyWebpackPlugin([
-				{
-					from: 'node_modules/cesium/Build/Cesium/ThirdParty',
-					to: 'cesium/ThirdParty'
-				}
-			]),
-			new CopyWebpackPlugin([
-				{ from: 'node_modules/cesium/Build/Cesium/Assets', to: 'cesium/Assets' }
-			]),
-			new CopyWebpackPlugin([
-				{
-					from: 'node_modules/cesium/Build/Cesium/Widgets',
-					to: 'cesium/Widgets'
-				}
-			]),
-			new webpack.DefinePlugin({
-				// Define relative base path in cesium for loading assets
-				CESIUM_BASE_URL: JSON.stringify('./cesium')
-			})
-		],
-		module: {
-			unknownContextCritical: false,
-			rules: [
-				{
-					test: /\.(gltf)|.(glb)$/,
-					loader: 'url-loader'
-				},
-			],
-		}
-	}
-}
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin')
+
+module.exports = defineConfig({
+    transpileDependencies: true,
+    configureWebpack: {
+        plugins: [
+            new CopyWebpackPlugin({
+                patterns: [
+                    {
+                        from: 'node_modules/cesium/Build/Cesium/Workers',
+                        to: 'Workers'
+                    },
+                    {
+                        from: 'node_modules/cesium/Build/Cesium/ThirdParty',
+                        to: 'ThirdParty'
+                    },
+
+                    {from: 'node_modules/cesium/Build/Cesium/Assets', to: 'Assets'},
+
+                    {
+                        from: 'node_modules/cesium/Build/Cesium/Widgets',
+                        to: 'Widgets'
+                    }
+                ]
+            }),
+            new webpack.DefinePlugin({
+                // Define relative base path in cesium for loading assets
+                CESIUM_BASE_URL: JSON.stringify('./')
+            }),
+            new NodePolyfillPlugin()
+        ],
+
+        resolve: {
+            alias: {
+                cesium: 'cesium'
+            }
+        },
+        module: {
+            unknownContextCritical: false,
+            rules: [
+                {
+                    test: /\.(gltf)|.(glb)$/,
+                    loader: 'url-loader'
+                },
+            ],
+        }
+    }
+})

@@ -1,31 +1,27 @@
 {
-	"name": "cesium-vue",
-	"version": "1.0.0",
-	"private": true,
-	"scripts": {
-		"dev": "vue-cli-service serve --open",
-		"build": "vue-cli-service build",
-		"lint": "vue-cli-service lint"
-	},
-	"dependencies": {
-		"axios": "^0.26.1",
-		"cesium": "^1.69.0",
-		"copy-webpack-plugin": "^5.0.5",
-		"core-js": "^3.4.3",
-		"element-ui": "^2.15.6",
-		"qs": "^6.11.1",
-		"vue": "^2.6.10",
-		"vue-router": "^3.0.1",
-		"vuex": "^3.0.1",
-		"webpack": "^4.41.2"
-	},
-	"devDependencies": {
-		"@vue/cli-plugin-babel": "^4.1.0",
-		"@vue/cli-service": "^4.1.0",
-		"vue-template-compiler": "^2.6.10"
-	},
-	"browserslist": [
-		"> 1%",
-		"last 2 versions"
-	]
+  "name": "satellite",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "cesium": "^1.83.0",
+    "core-js": "^3.8.3",
+    "node-polyfill-webpack-plugin": "^2.0.1",
+    "vue": "^2.6.14"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.16",
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-service": "~5.0.0",
+    "vue-template-compiler": "^2.6.14"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
 }
