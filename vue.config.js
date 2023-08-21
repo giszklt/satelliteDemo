@@ -2,7 +2,7 @@ const {defineConfig} = require('@vue/cli-service')
 const webpack = require('webpack')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin')
-
+//
 module.exports = defineConfig({
     transpileDependencies: true,
     configureWebpack: {
