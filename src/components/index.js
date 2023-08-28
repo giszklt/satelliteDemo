@@ -1,9 +1,3 @@
-import {
-    eastNorthUpToFixedFrame, HeadingPitchRoll,
-    northEastDownToFixedFrame,
-    northUpEastToFixedFrame,
-    northWestUpToFixedFrame
-} from "cesium";
 
 let utils = {
     earthRotate: null,
@@ -294,7 +288,7 @@ let utils = {
         {\n\
             czm_material material = czm_getDefaultMaterial(materialInput);\n\
             vec2 st = materialInput.st;\n\
-            vec4 colorImage = texture2D(image, vec2(fract(st.s - time), st.t));\n\
+            vec4 colorImage = texture(image, vec2(fract(st.s - time), st.t));\n\
             material.alpha = colorImage.a * color.a;\n\
             material.diffuse = (colorImage.rgb+color.rgb)/2.0;\n\
             return material;\n\
@@ -360,7 +354,7 @@ let utils = {
         {\n\
             czm_material material = czm_getDefaultMaterial(materialInput);\n\
             vec2 st = materialInput.st;\n\
-            vec4 colorImage = texture2D(image, vec2(fract(st.s - time), st.t));\n\
+            vec4 colorImage = texture+(image, vec2(fract(st.s - time), st.t));\n\
             material.alpha = colorImage.a * color.a;\n\
             material.diffuse = (colorImage.rgb+color.rgb)/2.0;\n\
             return material;\n\
@@ -728,10 +722,6 @@ let utils = {
     },
     // 流动线条连接两实体
     lineEntity: function (viewer, lineId, entity1, entity2, showEntity, showMaterial2, times, material, colortype) {
-        // let lineEntuty = this.getObjById(lineId, viewer)
-        // if (lineEntuty) {
-        //     return
-        // }
         let TimeInterval = null;
         if (times) {
             TimeInterval = new Cesium.TimeIntervalCollection();
@@ -752,37 +742,7 @@ let utils = {
                 }
                 return show;
             })
-
-            // entity2.ellipse.show = TimeInterval;
         }
-
-        // 暂时保留之前版本
-        let getMaterial = function () {
-            // debugger
-            let materialTep = new Cesium.PolylineTrailLinkMaterialProperty(Cesium.Color.RED, 700); //BLUE
-            if (showMaterial2) materialTep = new Cesium.PolylineTrailLinkMaterialProperty2(Cesium.Color.GREEN, 700);
-            return materialTep
-        };
-        // debugger;
-        // if (!material) material = getMaterial();
-        // (showMaterial2 == undefined) ? showMaterial2 = false: showMaterial2 = true;
-
-        // debugger
-        // let tempRed = new Cesium.PolylineTrailLinkMaterialProperty2(Cesium.Color.RED, 700);
-        // let tempBlue = new Cesium.PolylineTrailLinkMaterialProperty2(Cesium.Color.BLUE, 700)
-        // let selfmaterial = showMaterial2 === 'red' ? tempRed : tempBlue;
-
-
-        // debugger
-        if (viewer.entities.getById(lineId)) {
-            return
-        }
-        // if (colortype === 'blue') {
-        //     material = new Cesium.PolylineTrailLinkMaterialProperty2(Cesium.Color.BLUE, 700);
-        // }
-        // if (colortype === 'red') {
-        //     material = new Cesium.PolylineTrailLinkMaterialProperty2(Cesium.Color.RED, 700);
-        // }
         material = new Cesium.PolylineTrailLinkMaterialProperty3(Cesium.Color.GREEN, 700);
 
 
@@ -792,16 +752,6 @@ let utils = {
             show: showEntity,
             polyline: {
                 positions: new Cesium.CallbackProperty(function (time, result) {
-                    // let tempMaterial = new Cesium.PolylineTrailLinkMaterialProperty2(Cesium.Color.GREEN, 700);
-                    // if (times.length > 1) {
-                    //     times.some(item => {
-                    //         if (time.secondsOfDay >= item.start.secondsOfDay && time.secondsOfDay <= item.stop.secondsOfDay) {
-                    //             tempMaterial = item.type == 1 ? new Cesium.PolylineTrailLinkMaterialProperty(Cesium.Color.RED, 700) : tempMaterial;
-                    //             return true;
-                    //         }
-                    //     })
-                    // }
-                    // entity.polyline.material = tempMaterial;
                     if (entity1.position.getValue(time)) {
                         let sourpos = entity1.position.getValue(time);
                         let cartographic1 = Cesium.Ellipsoid.WGS84.cartesianToCartographic(sourpos);
@@ -819,12 +769,7 @@ let utils = {
                 }, false),
                 arcType: Cesium.ArcType.NONE,
                 width: 2,
-                // material: new Cesium.PolylineGlowMaterialProperty({
-                //     glowPower: 0.5,
-                //     color: Cesium.Color.RED.withAlpha(0.5)
-                // }),
                 material: material,
-                // material: selfmaterial,
 
             }
         })
@@ -833,6 +778,7 @@ let utils = {
 
 //画矩形的方法
     moveRectangleEntity(viewer, id, long, width, satellite, roll, pitch, datas) { // 场景，卫星实体,视场角
+        return
         let rectangularPyramidSensor = new CesiumSensors.RectangularPyramidSensorVolume();
         rectangularPyramidSensor.id = id;
         let currentTime = viewer.clock.currentTime;
@@ -885,6 +831,7 @@ let utils = {
         return entity
     },
     moveRectangleEntity1(viewer, id, long, width, satellite, roll, pitch, datas) { // 场景，卫星实体,视场角
+        return
         let rectangularPyramidSensor = new CesiumSensors.RectangularPyramidSensorVolume();
         rectangularPyramidSensor.id = id;
         let currentTime = viewer.clock.currentTime;
@@ -937,7 +884,7 @@ let utils = {
         return entity
     },
     //绘制投影
-    moveEntity(viewer, type, satellite, data) { // 场景，卫星实体,视场角
+    moveEntity(viewer, type, satellite, data) {
         //圆锥clockNow===2;
         let entity = null;
         let clockNow = 1;
@@ -972,34 +919,6 @@ let utils = {
             let cone = Cesium.Math.toRadians(tempFar);
             directions.push(new Cesium.Spherical(clock, cone));
         }
-
-        let sectorPolygon = this.getSector(position.lon, position.lat, (ru * 1000) / 2, minAngle + 30, maxAngle + 30, 1);
-        // let sector = viewer.entities.add({
-        //     id: 'sector',
-        //     show: viewer.scene.mode != 3,
-        //     polygon: {
-        //         hierarchy: new Cesium.CallbackProperty(() => {
-        //             return new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(sectorPolygon))
-        //         }, false),
-        //         material: color,
-        //         extrudedHeight: 100,
-        //     }
-        // })
-
-        // let sector = viewer.scene.primitives.add(new Cesium.Primitive({
-        //     geometryInstances: new Cesium.GeometryInstance({
-        //         id: 'sector',
-        //         geometry: new Cesium.PolygonGeometry({
-        //             polygonHierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(sectorPolygon))
-        //         })
-        //     }),
-        //     appearance: new Cesium.EllipsoidSurfaceAppearance({
-        //         material: Cesium.Material({
-        //             Color: color
-        //         }),
-        //     }),
-        //     // show: viewer.scene.mode != 3,
-        // }));
         if (data.isais)
             directions.push(new Cesium.Spherical(0, 0));
         let self = this;
@@ -1020,25 +939,7 @@ let utils = {
                         self.moveEntity(viewer, type, satellite, data)
                     }
                 }
-                customSensor.show = scene.mode == 3
-                // sector.show = scene.mode != 3;
-                //
-                // viewer.scene.primitives.remove(sector);
-                // sector.destroy()
-                // sector = viewer.scene.primitives.add(new Cesium.Primitive({
-                //     geometryInstances: new Cesium.GeometryInstance({
-                //         id: 'sector',
-                //         geometry: new Cesium.PolygonGeometry({
-                //             polygonHierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(sectorPolygon))
-                //         })
-                //     }),
-                //     appearance: new Cesium.EllipsoidSurfaceAppearance({
-                //         material: Cesium.Material({
-                //             Color: color
-                //         }),
-                //     }),
-                //     show: viewer.scene.mode != 3,
-                // }));
+
                 let posData = this.setPos(viewer, satellite, 5);
                 let modelMatrix = satellite.computeModelMatrix(time);
 
@@ -1047,18 +948,8 @@ let utils = {
                 // let rp = self.getRollAndPitch(csspositon, tepPosition)
                 if (typeof (modelMatrix) == 'object') {
                     Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(-180))), modelMatrix)
-                    //如果条带在卫星前进轨道右边，测摆取负数，在左则反之
-                    //俯仰默认旋转180
-                    // Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationX(Cesium.Math.toRadians((rp[0])))), modelMatrix)
-                    // Cesium.Matrix4.multiply(modelMatrix, Cesium.Matrix4.fromRotationTranslation(Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(-180 - rp[1]))), modelMatrix)
-
                     customSensor.modelMatrix = modelMatrix
-                    // sector.modelMatrix = modelMatrix
                 }
-                // satellite.orientation = posData.sys;
-                // console.log(posData.olj.heading)
-                let tema = Math.abs(posData.olj.heading) * 2 + 90
-                sectorPolygon = self.getSector(tepPosition.lon, tepPosition.lat, (ru * 1000) / 2, minAngle + tema, maxAngle + tema, 1);
             }
         }
         viewer.scene.preRender.addEventListener(fun)
@@ -1069,96 +960,171 @@ let utils = {
         customSensor.radius = alt;
         customSensor.directions = directions;
 
-        customSensor.show = viewer.scene.mode == 3
-
         customSensor._directionsDirty = true
 
-        // customSensor.showThroughEllipsoid = true
+        customSensor.showThroughEllipsoid = false
+
         entity = viewer.scene.primitives.add(customSensor);
 
-        entity.intersectionColor.red = 0.2;
+        // entity.intersectionColor.red = 0.2;
         entity.lateralSurfaceMaterial.uniforms.color = color;
         return entity
     },
+    getHeading(pointA, pointB) {
+        //建立以点A为原点，X轴为east,Y轴为north,Z轴朝上的坐标系
+        const transform = Cesium.Transforms.eastNorthUpToFixedFrame(pointA);
+        //向量AB
+        const positionvector = Cesium.Cartesian3.subtract(pointB, pointA, new Cesium.Cartesian3());
+        //因transform是将A为原点的eastNorthUp坐标系中的点转换到世界坐标系的矩阵
+        //AB为世界坐标中的向量
+        //因此将AB向量转换为A原点坐标系中的向量，需乘以transform的逆矩阵。
+        const vector = Cesium.Matrix4.multiplyByPointAsVector(Cesium.Matrix4.inverse(transform, new Cesium.Matrix4()), positionvector, new Cesium.Cartesian3());
+        //归一化
+        const direction = Cesium.Cartesian3.normalize(vector, new Cesium.Cartesian3());
+        //heading
+        const heading = Math.atan2(direction.y, direction.x) - Cesium.Math.PI_OVER_TWO;
+        return Cesium.Math.TWO_PI - Cesium.Math.zeroToTwoPi(heading);
+    },
+
+    getPitch(pointA, pointB) {
+        let transfrom = Cesium.Transforms.eastNorthUpToFixedFrame(pointA);
+        const vector = Cesium.Cartesian3.subtract(pointB, pointA, new Cesium.Cartesian3());
+        let direction = Cesium.Matrix4.multiplyByPointAsVector(Cesium.Matrix4.inverse(transfrom, transfrom), vector, vector);
+        Cesium.Cartesian3.normalize(direction, direction);
+        //因为direction已归一化，斜边长度等于1，所以余弦函数等于direction.z
+        return Cesium.Math.PI_OVER_TWO - Cesium.Math.acosClamped(direction.z);
+    },
+    getOrientation(pointA, pointB, startTime) {
+        let property = new Cesium.SampledPositionProperty();
+        let stime = Cesium.JulianDate.addSeconds(
+            startTime,
+            0,
+            new Cesium.JulianDate()
+        );
+        property.addSample(stime, pointA);
+        let time = Cesium.JulianDate.addSeconds(
+            startTime,
+            1,
+            new Cesium.JulianDate()
+        );
+        let time2 = Cesium.JulianDate.addSeconds(
+            startTime,
+            0.5,
+            new Cesium.JulianDate()
+        );
+        property.addSample(time, pointB);
+        let pos = Cesium.HeadingPitchRoll.fromQuaternion(new Cesium.VelocityOrientationProperty(property).getValue(time2))
+        return pos
+    },
+    //顶点经纬度
+    changeOrientation(pointA, pointB) {
+        //计算经度方向的夹角
+        let startPt = Cesium.Cartographic.fromDegrees(pointA.lon, pointA.lat, pointA.alt);
+        let endX = Cesium.Cartographic.fromDegrees(pointB.lon, pointB.lat, pointB.alt);
+        let halfLen = 100000.0
+        let geoD = new Cesium.EllipsoidGeodesic();
+        geoD.setEndPoints(startPt, endX);
+        let innerS = geoD.surfaceDistance;
+        let angleX = Math.atan(innerS / halfLen);
+        let length = Math.sqrt(innerS * innerS + halfLen * halfLen);
+        let angleY = Math.asin(innerS / length);
+
+        //计算朝向
+        let hpr = new Cesium.HeadingPitchRoll(0.0, angleX, angleY);
+
+        let orientation = Cesium.Transforms.headingPitchRollQuaternion(Cesium.Cartesian3.fromDegrees(pointA.lon, pointA.lat, pointA.alt), hpr);
+        return [orientation, length]
+    },
+    getModelMatrix(pointA, pointB) {
+        //向量AB
+        const vector2 = Cesium.Cartesian3.subtract(pointB, pointA, new Cesium.Cartesian3());
+        //归一化
+        const normal = Cesium.Cartesian3.normalize(vector2, new Cesium.Cartesian3());
+        //旋转矩阵 rotationMatrixFromPositionVelocity源码中有，并未出现在cesiumAPI中
+        const rotationMatrix3 = Cesium.Transforms.rotationMatrixFromPositionVelocity(pointA, normal, Cesium.Ellipsoid.WGS84);
+        const orientation = Cesium.Quaternion.fromRotationMatrix(rotationMatrix3);
+        const modelMatrix4 = Cesium.Matrix4.fromRotationTranslation(rotationMatrix3, pointA);
+        //点B的模型矩阵
+        //const modelMatrix4 = Cesium.Matrix4.fromRotationTranslation(rotationMatrix3, pointB);
+        const hpr = Cesium.HeadingPitchRoll.fromQuaternion(orientation);
+        return hpr;
+    },
     //添加雷达干扰
-    addRadarInteraction(viewer, type, satellite, data) { // 场景，卫星实体,视场角
-        //圆锥clockNow===2;
-        let entity = null;
-        let currentTime = viewer.clock.currentTime;
-        let position = this.getEntityPos(satellite, currentTime);
-        let self = this;
+    addRadarInteraction(viewer, lineId, entity1, entity2, showEntity, showMaterial2, times, material, colortype){
 
-        let i = Cesium.Cartesian3.fromDegrees(position.lon, position.lat);
-        let r = Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(i), new Cesium.Cartesian3(0, 0, position.alt / 2), new Cesium.Matrix4);
-        //
-        // var modelMatrix111 = Cesium.Matrix4.multiplyByTranslation(
-        //     Cesium.Transforms.eastNorthUpToFixedFrame(positionOnEllipsoid),
-        //     new Cesium.Cartesian3(0.0, 0.0, position.alt * 0.5), new Cesium.Matrix4()
-        // );
+        // mars3d.Map也可以直接传入外部已经构造好的viewer, 支持config.json所有参数
+        // const map = new mars3d.Map(viewer)
 
-        let n = new Cesium.CylinderGeometry({
-            length: position.alt,
-            topRadius: 0,
-            bottomRadius: 1000000,
-            vertexFormat: Cesium.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat
-        });
-        let s = new Cesium.GeometryInstance({geometry: n, modelMatrix: r});
-        let radarInteraction = new Cesium.Primitive({
-            geometryInstances: [s],
-            appearance: new Cesium.MaterialAppearance({
-                material: new Cesium.Material({
-                    fabric: {
-                        type: "VtxfShader1",
-                        uniforms: {
-                            color: new Cesium.Color(1, 0, 0, 1),
-                            repeat: 30,
-                            offset: 0,
-                            thickness: .3
-                        },
-                        source: " uniform vec4 color;" +
-                            " uniform float repeat;" +
-                            " uniform float offset;" +
-                            " uniform float thickness;" +
-                            " czm_material czm_getMaterial(czm_materialInput materialInput)" +
-                            " {" +
-                            " czm_material material = czm_getDefaultMaterial(materialInput);" +
-                            " float sp = 1.0/repeat;" +
-                            " vec2 st = materialInput.st;" +
-                            // " vec4 colorImage = texture2D(image, vec2(fract(st.s - time), st.t));" +
-                            " float dis = distance(st, vec2(0.5));" +
-                            " float m = mod(dis + offset, sp);" +
-                            " float a = step(sp*(1.0-thickness), m);" +
-                            " material.diffuse = color.rgb;" +
-                            // " material.alpha = colorImage.a * color.a;" +
-                            " material.alpha = a * color.a;" +
-                            " return material;" +
-                            " } "
-                    }, translucent: !1
-                }), faceForward: !1, closed: !0
-            })
-        })
-        let fun = (scene, time) => {
-            let offset = radarInteraction.appearance.material.uniforms.offset;
-            offset -= 0.001;
-            if (offset > 1.0) {
-                offset = 0.0;
+        const coneTrack = new mars3d.graphic.ConeTrack({
+            position: entity1.position,
+            targetPosition: entity2.position,
+            style: {
+                // length: 4000, //targetPosition存在时无需传
+                angle: 3, // 半场角度
+                // 自定义扩散波纹纹理
+                materialType: mars3d.MaterialType.CylinderWave,
+                materialOptions: {
+                    color: "#ff0000",
+                    repeat: 30.0,
+                    thickness: 0.2
+                }
             }
-            radarInteraction.appearance.material.uniforms.offset = offset;
-            let tempPosition = self.getEntityPos(satellite, time);
-            radarInteraction.modelMatrix = Cesium.Matrix4.multiplyByTranslation(
-                Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(tempPosition.lon, tempPosition.lat)),
-                new Cesium.Cartesian3(0.0, 0.0, tempPosition.alt * 0.5), new Cesium.Matrix4()
-            );
-        }
-        viewer.scene.preUpdate.addEventListener(fun)
-        radarInteraction.removeEventListener = () => {
-            viewer.scene.preUpdate.removeEventListener(fun)
-        }
-        radarInteraction.id = data.id;
+        })
 
-        // customSensor.show = viewer.scene.mode == 3
-        // customSensor.showThroughEllipsoid = true
-        entity = viewer.scene.primitives.add(radarInteraction);
+
+return coneTrack
+
+        let TimeInterval = null;
+        if (times) {
+            TimeInterval = new Cesium.TimeIntervalCollection();
+            times.forEach(time => {
+                TimeInterval.addInterval(new Cesium.TimeInterval({
+                    start: time.start,
+                    stop: time.stop,
+                    data: true
+                }))
+            })
+        }
+        if (entity2.ellipse) {
+            entity2.ellipse.show = new Cesium.ConstantProperty(function () {
+                let cu = viewer.clock.currentTime;
+                let show = false;
+                if (cu >= times[0].start && cu <= times[0].stop) {
+                    show = true;
+                }
+                return show;
+            })
+        }
+        // material = new Cesium.PolylineTrailLinkMaterialProperty3(Cesium.Color.GREEN, 700);
+
+
+        let entity = viewer.entities.add({
+            availability: TimeInterval,
+            id: lineId,
+            show: showEntity,
+            polyline: {
+                positions: new Cesium.CallbackProperty(function (time, result) {
+                    if (entity1.position.getValue(time)) {
+                        let sourpos = entity1.position.getValue(time);
+                        let cartographic1 = Cesium.Ellipsoid.WGS84.cartesianToCartographic(sourpos);
+                        let lon1 = Cesium.Math.toDegrees(cartographic1.longitude);
+                        let lat1 = Cesium.Math.toDegrees(cartographic1.latitude);
+                        let height1 = cartographic1.height;
+                        let tarpos = entity2.position.getValue(time);
+                        let cartographic = Cesium.Ellipsoid.WGS84.cartesianToCartographic(tarpos);
+                        let lon2 = Cesium.Math.toDegrees(cartographic.longitude);
+                        let lat2 = Cesium.Math.toDegrees(cartographic.latitude);
+                        let height2 = cartographic.height;
+                        return Cesium.Cartesian3.fromDegreesArrayHeights([lon1, lat1, height1, lon2, lat2, height2], Cesium.Ellipsoid
+                            .WGS84, result);
+                    }
+                }, false),
+                arcType: Cesium.ArcType.NONE,
+                width: 20,
+                material: material,
+
+            }
+        })
         return entity
     },
     //entities方式添加点、labels
@@ -1340,10 +1306,10 @@ let utils = {
                 length: height,
                 topRadius: 0,
                 bottomRadius: 500000,//幅宽
-                material: Cesium.Color.RED.withAlpha(0.4),
+                material: new Cesium.Color(51 / 255, 255 / 255, 255 / 255, 0.2),
                 outline: !0,
                 numberOfVerticalLines: 0,
-                outlineColor: Cesium.Color.RED.withAlpha(0.4)
+                outlineColor: new Cesium.Color(51 / 255, 255 / 255, 255 / 255, 0.2)
             },
             show: showEntity,
         });

@@ -1,12 +1,19 @@
 <template>
-  <div id="container">
+  <div>
+    <div id="container">
+    </div>
+
+    <canvas id="canvas-a" width="400px" height="400pxs"></canvas>
+    <canvas id="canvas-b" width="400px" height="400px"></canvas>
+    <canvas id="canvas-c" width="400px" height="400px"></canvas>
   </div>
 </template>
 
 <script>
-// import * as Cesium from "cesium"
-// import 'cesium/Source/Widgets/widgets.css'
-// import "cesium/widgets.css"
+
+let changenum = 0;
+let curCanvas = 'a';
+let map = null
 export default {
   name: 'HelloWorld',
   props: {
@@ -31,64 +38,77 @@ export default {
           satelliteCode: "bd",
           name: "bd",
           ru: 1000,
-        },
-
+        }
+      ],
+      radar: [
         {
           satelliteCode: "bd4",
-          name: "bd4",
-          ru: 1000,
-        },
+          target: 'bdG1',
+          name: "target",
+        }],
+      task: [
         {
-          satelliteCode: "bdG1",
-          name: "bdG1",
-          ru: 1000,
+          endTime: "2021-11-25 19:12:00",
+          satelliteCode: "bd",
+          startTime: "2021-11-24 19:12:00",
+          stationCode: "bd4",
+          type: "SC"
         },
-      ],
+        // {
+        //   endTime: "2021-11-24 11:12:00",
+        //   satelliteCode: "text-1",
+        //   startTime: "2021-11-25 11:12:00",
+        //   stationCode: "text-3",
+        //   type: "SC"
+        // },
+        // {
+        //   endTime: "2021-11-24 11:12:00",
+        //   satelliteCode: "text-1",
+        //   startTime: "2021-11-25 11:12:00",
+        //   stationCode: "CSS",
+        //   type: "SC"
+        // }
+      ]
     }
   },
   methods: {
     init() {
-      // const viewer = new Cesium.Viewer("container", {
-      //   // baseLayerPicker: false,
-      //   baseLayerPicker: false,
-      //   animation: true,
-      //   timeline:true,
-      //   infoBox: false,
-      // });
-
-      const earth = new XE.Earth('container', {
+      const viewer = new Cesium.Viewer("container", {
+        geocoder: false,
         baseLayerPicker: true,
         animation: true,
-        timeline: true,
-        infobox: false,
+        navigationHelpButton: false,
+        infoBox: false,
+        fullscreenButton: false,
+        // sceneMode: Cesium.SceneMode.SCENE2D,
+        // 连接地图服
         imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
           // url: window.mapUrl + ":9109/map/?z={z}&x={x}&y={y}",
           url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer",
           tilingScheme: new Cesium.WebMercatorTilingScheme(),
-          maximumLevel: 7,
-          show: true
+          maximumLevel: 15,
+          show: false
         })
       });
+      console.log("Cesium原生Cesium构造完成", viewer) // 打印测试信息
 
-      earth.sceneTree.root = {
-        "children": [
-          {
-            "czmObject": {
-              "name": "默认离线影像",
-              "xbsjType": "Imagery",
-              "xbsjImageryProvider": {
-                "createTileMapServiceImageryProvider": {
-                  "url": XE.HTML.cesiumDir + 'Assets/Textures/NaturalEarthII',
-                  "fileExtension": 'jpg',
-                },
-                "type": "createTileMapServiceImageryProvider"
-              }
-            }
-          },
-        ]
-      };
+      // mars3d.Map也可以直接传入外部已经构造好的viewer, 支持config.json所有参数
+      map = new mars3d.Map(viewer, {
+        scene: {
+          center: {lat: 30.054604, lng: 108.885436, alt: 17036414, heading: 0, pitch: -90},
+          fxaa: true
+        },
+        control: {
+          contextmenu: {hasDefault: true} // 右键菜单
+        }
+      })
+      viewer.scene.screenSpaceCameraController.minimumZoomDistance = 0;
+      viewer.scene.screenSpaceCameraController.maximumZoomDistance = 2500000000;
 
-      const viewer = earth.czm.viewer;
+
+      this.utils.changeToUTC8(viewer);
+
+      this.utils.polylineMaterial();
       window.viewer = viewer
 
       const self = this
@@ -123,28 +143,148 @@ export default {
     },
 
     addload() {
-
+      let self = this
       // debugger
       this.satelliteList.forEach(item => {
         // return
         let entity = this.utils.getObjById(item.satelliteCode, window.viewer);
         if (entity) {
-          this.utils.moveEntity(window.viewer, 1, entity, item);
-          this.utils.addRadarInteraction(window.viewer, 1, entity, item);
-          if (item.satelliteCode.indexOf("8A")) {
-            // this.utils.drawShadow(viewer, entity, "xxx", true,0)
-            // this.utils.drawCone(viewer, entity, "xxx", true)
-            // this.utils.getPosStrs(viewer, entity)
-            // this.utils.moveEntity(window.viewer, 1, entity, item);
-            // this.utils.moveRectangleEntity(viewer, item.satelliteCode, 4500, 4500, entity, 26, 9, [])
+          this.utils.drawCone(window.viewer, entity, '11', true);
+        }
+      });
+      this.radar.forEach(item => {
+        let sentity = this.utils.getObjById(item.satelliteCode, window.viewer);
+        let eentity = this.utils.getObjById(item.target, window.viewer);
+        let scStart = Cesium.JulianDate.fromDate(
+            new Date("2021-11-24 00:00:00")
+        );
+        let scEnd = Cesium.JulianDate.fromDate(
+            new Date("2022-11-26 00:00:00")
+        );
+        if (sentity && eentity) {
+          let graphicLayer = new mars3d.layer.GraphicLayer()
+          map.addLayer(graphicLayer)
+
+          let coneTrack = this.utils.addRadarInteraction(window.viewer,
+              "zjline",
+              sentity,
+              eentity,
+              true,
+              null,
+              [
+                {
+                  start: scStart,
+                  stop: scEnd
+                }
+              ]);
+          graphicLayer.addGraphic(coneTrack)
+          return
+          let m = new Cesium.ImageMaterialProperty({
+            image: new Cesium.CallbackProperty(this.drawCanvasImage, false),
+            transparent: true
+          })
+          this.utils.addRadarInteraction(window.viewer,
+              "zjline",
+              sentity,
+              eentity,
+              true,
+              null,
+              [
+                {
+                  start: scStart,
+                  stop: scEnd
+                }
+              ],
+              m);
+        }
+      });
+
+      this.timerRun();
+    },
+    readyCanvas(convasid, radius) {
+      let canvas = document.getElementById(convasid);
+      let cwidth = 400;
+      let cheight = 400;
+      let ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, cwidth, cheight);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0)';
+      ctx.fillRect(0, 0, cwidth, cheight);
+
+      for (let ii = 0; radius <= 200; ii++) {
+        ctx.lineWidth = 5;
+        //开始一个新的绘制路径
+        ctx.beginPath();
+        //设置弧线的颜色
+        let trans = 1.0 - (radius / 255);
+        ctx.strokeStyle = "rgba(255, 0, 255, " + trans + ")";
+        let circle = {
+          x: 200, //圆心的x轴坐标值
+          y: 200, //圆心的y轴坐标值
+          r: radius //圆的半径
+        };
+        //以canvas中的坐标点(200,200)为圆心，绘制一个半径为50px的圆形
+        ctx.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2, true);
+        //按照指定的路径绘制弧线
+        ctx.stroke();
+        radius += 20;
+      }
+    },
+    drawCanvasImage(time, result) {
+      changenum++;
+      let canvas = document.getElementById("canvas-" + curCanvas);
+      if (changenum >= 20) {
+        changenum = 0;
+        if (curCanvas === 'a')
+          curCanvas = 'b';
+        else if (curCanvas === 'b')
+          curCanvas = 'c';
+        else
+          curCanvas = 'a';
+      }
+      return canvas;
+    },
+    timerRun(){
+      // debugger
+      this.task.forEach(item => {
+        let scTimes = [];
+        if (item.type == "SC") {
+          let scStart = Cesium.JulianDate.fromDate(
+              new Date(item.startTime)
+          );
+          let scEnd = Cesium.JulianDate.fromDate(new Date(item.endTime));
+          let sId = item.stationCode;
+          scTimes.push({
+            start: scStart,
+            stop: scEnd
+          });
+          let stationEntity = this.utils.getObjById(sId, window.viewer);
+          let wxId = item.satelliteCode;
+          let wxEntity = this.utils.getObjById(wxId, window.viewer);
+          // debugger
+          if (stationEntity) {
+            this.utils.lineEntity(
+                window.viewer,
+                wxId + "" + sId,
+                wxEntity,
+                stationEntity,
+                true,
+                null,
+                // "red", //可传参为red 和 blue
+                scTimes
+            );
           }
         }
       });
-      // this.timerRun();
-    },
+    }
+
+
   },
   mounted() {
     this.init()
+
+    this.readyCanvas("canvas-a", 5);
+    this.readyCanvas("canvas-b", 10);
+    this.readyCanvas("canvas-c", 15);
   }
 }
 </script>

@@ -1,5 +1,5 @@
 # satellite
-##
+
 ## Project setup
 ```
 npm install
